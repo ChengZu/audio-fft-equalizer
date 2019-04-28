@@ -1,0 +1,74 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+		<title>FFT EQ</title>
+		<link rel="stylesheet" type="text/css" href="style.css">
+		<script src="jquery.min.js"></script>
+		<script src="jquery-ui.min.js"></script>
+		<script src="index.js"></script>
+	</head>
+	<body>
+		<div id="container">
+			<header>
+				<p>FFT Equalizer</p>
+			</header>
+			<div id="content">
+				<audio id="audio" src="Professor Kliq - Plastic Flashing Lights.ogg" controls="true" style="width:386px;"></audio>
+				<div id="screen">
+					<canvas width="512" height="256" id="spectrum"></canvas>
+				</div>
+				
+
+            <div id="wrapper-inner">
+                <canvas id="visualizer" width="512" height="256">Your browser does not support Canvas tag.</canvas>
+            </div>
+
+				
+				
+				
+				<div>
+					<select id="combobox-equalizer">
+						<option value="0" selected="selected">Manual</option>
+						<optgroup label="Preset">
+							<option value="1">Acoustic</option>
+							<option value="2">Base Booster</option>
+							<option value="3">Electronic</option>
+							<option value="4">Flat</option>
+							<option value="5">Jazz</option>
+							<option value="6">Pop</option>
+							<option value="7">Rock</option>
+							<option value="8">Small Speakers</option>
+							<option value="9">Vocal Booster</option></optgroup>
+					</select>
+				</div>
+				<div id="equalizer">
+					<div id="slider0" class="slider"></div>
+					<div id="slider1" class="slider"></div>
+					<div id="slider2" class="slider"></div>
+					<div id="slider3" class="slider"></div>
+					<div id="slider4" class="slider"></div>
+					<div id="slider5" class="slider"></div>
+					<div id="slider6" class="slider"></div>
+					<div id="slider7" class="slider"></div>
+					<div id="slider8" class="slider"></div>
+					<div id="slider9" class="slider"></div>
+				</div>
+			</div>
+			<div id="controls">
+				<input type="file" id="file" />
+				<button class="ui-button" onclick="play();">play</button>
+			</div>
+		</div>
+		<script type="text/javascript" src="fft.js"></script>
+		<script type="text/javascript" src="app.js"></script>
+		<script type="text/javascript">App.init();
+		function play() {
+			App.play();
+			window.requestAnimationFrame(render);
+		}
+		
+		</script>
+		
+	</body>
+</html>
