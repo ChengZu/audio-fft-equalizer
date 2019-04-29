@@ -16,7 +16,6 @@
 			<div id="content">
 				<div id="loader">
 					<input type="file" id="file" />
-					<button class="ui-button" onclick="App.play();">play</button>
 				</div>
 
 				<div id="player"></div>
@@ -59,19 +58,31 @@
 		<script type="text/javascript" src="app.js"></script>
 		<script type="text/javascript">
 			var player = new Player();
-			player.init("#player", 270000);
+			var App = new FFTEQ();
+			player.init("#player");
 			App.init();
+			
+			App.onLoaded =  function(o) {
+				player.setDuration(App.duration);
+			}
+			
+	
 			var paused=true;
+			
 			setInterval(function() {
-				player.currentTime += 500;
+
+				player.currentTime += 0.5;
 				if(!paused) player.setCurrentTime(player.currentTime);
 			},500);
+			
 			player.onPlay = function(o) {
 				console.log('onPlay '+o.currentTime);
+				App.play(o.currentTime);
 				paused=false;
 			}
 			player.onPause = function(o) {
 				console.log('onPause '+o.currentTime);
+				App.pause();
 				paused=true;
 			}
 			player.onVolume = function(o) {
