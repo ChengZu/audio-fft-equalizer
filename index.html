@@ -58,35 +58,38 @@
 		<script type="text/javascript" src="app.js"></script>
 		<script type="text/javascript">
 			var player = new Player();
-			var App = new FFTEQ();
+			var App = new APP();
+
 			player.init("#player");
 			App.init();
 			
-			App.onLoaded =  function(o) {
+			App.onLoaded = function(o) {
 				player.setDuration(App.duration);
 			}
 			
-	
-			var paused=true;
+			App.onCurrentTime = function(o) {
+				//console.log('currentTime '+o.currentTime);
+				player.setCurrentTime(o.currentTime);
+			}
 			
-			setInterval(function() {
+			App.onEnd = function(o) {
+				//console.log('onEnd '+o.currentTime);
+				player.setCurrentTime(0);
+				player.pause();
+			}
 
-				player.currentTime += 0.5;
-				if(!paused) player.setCurrentTime(player.currentTime);
-			},500);
-			
 			player.onPlay = function(o) {
-				console.log('onPlay '+o.currentTime);
+				//console.log('onPlay '+o.currentTime);
 				App.play(o.currentTime);
-				paused=false;
 			}
+			
 			player.onPause = function(o) {
-				console.log('onPause '+o.currentTime);
+				//console.log('onPause '+o.currentTime);
 				App.pause();
-				paused=true;
 			}
+			
 			player.onVolume = function(o) {
-				console.log('onVolume '+o.volume);
+				//console.log('onVolume '+o.volume);
 			}
 		</script>
 		

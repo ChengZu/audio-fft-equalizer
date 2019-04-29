@@ -1,4 +1,4 @@
-function FFTEQ() {
+function APP() {
 	this.EQ_COUNT = 10;
 	this.EQ_BAND_COUNT = 10;
 	this.SAMPLE_COUNT = 4096;
@@ -16,31 +16,34 @@ function FFTEQ() {
 	this.waveI = new Array();
 	this.waveComplete = false;
 	this.onLoaded = function() {};
+	this.onCurrentTime = function() {};
+	this.onEnd = function() {};
 	this.audioFile = null;
 	this.audioBuffer = null;
 	this.paused = true;
 	this.duration = 0;
 	this.currentTime = 0;
+	this.currentTimeoffset = 0;
 	this.sampleRate = 48000;
 }
 
-FFTEQ.prototype.triangular_window = function(x) {
+APP.prototype.triangular_window = function(x) {
 	return 1 - Math.abs(1 - 2 * x);
 }
 
-FFTEQ.prototype.cosine_window = function(x) {
+APP.prototype.cosine_window = function(x) {
 	return Math.cos(Math.PI * x - Math.PI / 2);
 }
 
-FFTEQ.prototype.hamming_window = function(x) {
+APP.prototype.hamming_window = function(x) {
 	return 0.54 - 0.46 * Math.cos(2 * Math.PI * x);
 }
 
-FFTEQ.prototype.hann_window = function(x) {
+APP.prototype.hann_window = function(x) {
 	return 0.5 * (1 - Math.cos(2 * Math.PI * x));
 }
 
-FFTEQ.prototype.window_ = function(buffer, size) {
+APP.prototype.window_ = function(buffer, size) {
 	for (var i = 0; i < size; i++) {
 		buffer[i] *= this.hamming_window(i / (size - 1));
 		//buffer[i] *= this.triangular_window(i / (size - 1));
@@ -49,11 +52,11 @@ FFTEQ.prototype.window_ = function(buffer, size) {
 	}
 }
 
-FFTEQ.prototype.butterworth_filter = function(x, n, d0) {
+APP.prototype.butterworth_filter = function(x, n, d0) {
 	return 1 / (1 + Math.pow(Math.abs(x) / d0, 2 * n));
 }
 
-FFTEQ.prototype.eq_filter = function(x) {
+APP.prototype.eq_filter = function(x) {
 	var seq = this.eq[this.selected_eq];
 	var sum = 1;
 	for (var i = 0; i < this.EQ_BAND_COUNT; i++) {
@@ -62,19 +65,19 @@ FFTEQ.prototype.eq_filter = function(x) {
 	return sum;
 }
 
-FFTEQ.prototype.triangular_window = function(x) {
+APP.prototype.triangular_window = function(x) {
 	return 1 - Math.abs(1 - 2 * x);
 }
 
-FFTEQ.prototype.db_to_mag = function(db) {
+APP.prototype.db_to_mag = function(db) {
 	return Math.pow(10, db / 10);
 }
 
-FFTEQ.prototype.mag_to_db = function(mag) {
+APP.prototype.mag_to_db = function(mag) {
 	return 10 * (Math.log(mag) / Math.log(10));
 }
 
-FFTEQ.prototype.hsvToRgb = function(h, s, v) {
+APP.prototype.hsvToRgb = function(h, s, v) {
 	var r, g, b;
 
 	var i = Math.floor(h * 6);
@@ -119,7 +122,10 @@ FFTEQ.prototype.hsvToRgb = function(h, s, v) {
 	return [parseInt(r * 255), parseInt(g * 255), parseInt(b * 255)];
 }
 
-FFTEQ.prototype.audioprocess = function(event) {
+APP.prototype.audioprocess = function(event) {
+	this.currentTime = this.audioCtx.currentTime + this.currentTimeoffset;
+	this.onCurrentTime(this);
+	
 	this.waveComplete = false;
 	// The input buffer is a song we loaded earlier
 	var inputBuffer = event.inputBuffer;
@@ -162,7 +168,7 @@ FFTEQ.prototype.audioprocess = function(event) {
 	this.waveComplete = true;
 }
 
-FFTEQ.prototype.drawSpectrum = function() {
+APP.prototype.drawSpectrum = function() {
 	this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 	if (!this.waveComplete) return;
 
@@ -188,7 +194,7 @@ FFTEQ.prototype.drawSpectrum = function() {
 
 }
 
-FFTEQ.prototype._onLoaded = function(buffer) {
+APP.prototype._onLoaded = function(buffer) {
 	clearInterval(this.interval);
 	this.audioBuffer = buffer;
 	this.duration = buffer.duration;
@@ -197,7 +203,7 @@ FFTEQ.prototype._onLoaded = function(buffer) {
 }
 
 
-FFTEQ.prototype.loadFile = function() {
+APP.prototype.loadFile = function() {
 	if (this.audioFile.files[0] == undefined) {
 		alert("Select A Local File");
 		return;
@@ -217,14 +223,9 @@ FFTEQ.prototype.loadFile = function() {
 		});
 	}
 }
-FFTEQ.prototype.initAudioCtx = function(buffer) {
-	if (this.audioCtx) {
-		this.source.disconnect(this.scriptNode);
-		this.scriptNode.disconnect(this.audioCtx.destination);
-		this.scriptNode.removeEventListener('audioprocess', this.audioprocess);
-		this.audioCtx.close();
-	}
-
+APP.prototype.initAudioCtx = function(buffer) {
+	this.destroyAudioCtx();
+	
 	this.audioCtx = new this.AudioContext();
 	this.source = this.audioCtx.createBufferSource();
 
@@ -233,31 +234,46 @@ FFTEQ.prototype.initAudioCtx = function(buffer) {
 	this.scriptNode.addEventListener('audioprocess', this.audioprocess.bind(this));
 
 	// When the buffer source stops playing, disconnect everything
+	var _that = this;
 	this.source.onended = function() {
+		_that.destroyAudioCtx();
 		clearInterval(this.interval);
+		_that.onEnd(_that);
 	}
 	this.source.connect(this.scriptNode);
 	this.scriptNode.connect(this.audioCtx.destination);
 	this.source.buffer = buffer;
 }
+APP.prototype.destroyAudioCtx = function() {
+	try {
+		if (this.audioCtx) {
+			this.scriptNode.disconnect(this.audioCtx.destination);
+			this.scriptNode.removeEventListener('audioprocess', this.audioprocess);
+			this.source.disconnect(this.scriptNode);
+			this.audioCtx.close();
+		}
+	}catch(err){
+		//console.log(err);
+	}
 
-FFTEQ.prototype.play = function(currentTime) {
+}
+
+APP.prototype.play = function(currentTime) {
 	clearInterval(this.interval);
 	if(currentTime == undefined) currentTime = this.currentTime;
-	if(this.paused) this.initAudioCtx(this.audioBuffer);
-	this.source.start(currentTime);
-	this.paused = false;
+	this.initAudioCtx(this.audioBuffer);
+	this.currentTimeoffset = currentTime;
+	this.source.start(0, currentTime);
 	this.interval = setInterval(this.drawSpectrum.bind(this), 1000 / 24);
 }
 
-FFTEQ.prototype.pause = function() {
+APP.prototype.pause = function() {
 	clearInterval(this.interval);
-	this.paused = true;
-	this.currentTime = this.audioCtx.currentTime;
 	this.source.stop();
+	this.destroyAudioCtx();
 }
 
-FFTEQ.prototype.init = function() {
+APP.prototype.init = function() {
 
 	this.eq[0] = [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00];
 	this.eq[1] = [0.30, 0.30, 0.20, 0.05, 0.10, 0.10, 0.20, 0.25, 0.20, 0.10];
@@ -295,7 +311,7 @@ FFTEQ.prototype.init = function() {
 		value: 0
 	}).change(function() {
 		for (var i = 0; i < _that.EQ_COUNT; i++) {
-			_that.selected_eq = _that.value;
+			_that.selected_eq = this.value;
 			$("#slider" + i).slider({
 				value: _that.eq[_that.selected_eq][i]
 			});
