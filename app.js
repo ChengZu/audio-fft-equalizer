@@ -144,7 +144,7 @@ APP.prototype.audioprocess = function(event) {
 		var waveR2 = new Array();
 		var waveI2 = new Array();
 		for (var sample = 0; sample < inputBuffer.length; sample++) {
-			waveR2[sample] = inputData[sample];
+			waveR2[sample] = inputData[sample] * this.volume;
 			waveI2[sample] = 0;
 		}
 
@@ -162,7 +162,7 @@ APP.prototype.audioprocess = function(event) {
 		this.fft.fft(waveR2, waveI2, this.SAMPLE_COUNT, -1);
 
 		for (var sample = 0; sample < inputBuffer.length; sample++) {
-			outputData[sample] = waveR2[sample] * this.volume;
+			outputData[sample] = waveR2[sample];
 		}
 
 	}
