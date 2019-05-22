@@ -21,6 +21,7 @@ function APP() {
 	this.audioFile = null;
 	this.audioBuffer = null;
 	this.paused = true;
+	this.volume = 1.0;
 	this.duration = 0;
 	this.currentTime = 0;
 	this.currentTimeoffset = 0;
@@ -161,7 +162,7 @@ APP.prototype.audioprocess = function(event) {
 		this.fft.fft(waveR2, waveI2, this.SAMPLE_COUNT, -1);
 
 		for (var sample = 0; sample < inputBuffer.length; sample++) {
-			outputData[sample] = waveR2[sample];
+			outputData[sample] = waveR2[sample] * this.volume;
 		}
 
 	}
